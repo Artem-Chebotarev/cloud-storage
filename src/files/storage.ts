@@ -6,8 +6,8 @@ const generateId = () =>
     .map(() => Math.round(Math.random() * 16).toString(16))
     .join('');
 
-const normalizeFileName = (req, file, callback) => {
-  const fileExtName = file.originalName.split('.').pop();
+const normalizeFileName = (req, file: Express.Multer.File, callback) => {
+  const fileExtName = file.originalname.split('.').pop();
 
   callback(null, `${generateId()}.${fileExtName}`);
 };

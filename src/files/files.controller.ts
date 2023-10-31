@@ -5,17 +5,32 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  Get,
+  UseGuards,
+  Query,
+  Delete,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileStorage } from './storage';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { UserId } from 'src/auth/decorators/user-id.decorator';
+import { FileType } from './entities/file.entity';
 
 @Controller('files')
 // To group endpoint in one group, for example 'users'
 @ApiTags('files')
+// Protect files controllers with JwtGuard (If there is no JWT-token or it's expired)
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
+
+  @Get()
+  findAll(@UserId() userId: number, @Query('type') fileType: FileType) {
+    return this.filesService.findAll(userId, fileType);
+  }
 
   @Post()
   @UseInterceptors(
@@ -44,7 +59,14 @@ export class FilesController {
       }),
     )
     file: Express.Multer.File,
+    @UserId() userId: number,
   ) {
-    return file;
+    return this.filesService.create(file, userId);
+  }
+
+  @Delete()
+  remove(@UserId() userId: number, @Query('id') ids: string) {
+    // files?ids=1,2,7
+    return this.filesService.remove(userId, ids);
   }
 }
